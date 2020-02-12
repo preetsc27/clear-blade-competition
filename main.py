@@ -4,24 +4,58 @@ import psutil
 from clearblade.ClearBladeCore import System
 
 # I am only taking cpu percentage of utilisation and virtual_memory details in %
-# getting the data
+# getting the dataif 
 cpu_info = psutil.cpu_percent()
-vmemory_info = psutil.virtual_memory()[2]  # physical memory usage
+## Change: Looking for None check
+if cpu_info == None:
+    print("Not able to find CPU usage")
+    ## We will exit with status 1(error)
+    sys.exit(1)
+
+vmemory_info = psutil.virtual_memory()  # physical memory usage
+## Change: Looking for None check
+if vmemory_info == None:
+    print("Not able to find Virtual Memory")
+    ## We will exit with status 1(error)
+    sys.exit(1)
+else:
+    ## Change: Looking if the @var vmemory_info length is more than 2
+    ## because we need the 2nd index value from it
+    if len(vmemory_info) < 2:
+        print("Not able to find CPU usage")
+        ## We will exit with status 1(error)
+        sys.exit(1)
+
+## Change: Getting the memory usage
+memory_usage = vmemory_info[2]
 
 # creating a dict to store the data
 data = {
     "cpu_info": cpu_info,
-    "vmemory_info": vmemory_info
+    "vmemory_info": memory_usage
 }
 
 # System credentials
-SystemKey = "9ae6d1e30bda958cfc9cf69bfde201"
-SystemSecret = "9AE6D1E30BC8E5BA9CB3BB8DF02E"
+## Change: to increase the security we will get the keys from the env variables
+systemKey = os.environ.get("SystemKey", None)
+# None check for system key
+if systemKey == None:
+    print("Please add System Key")
+    sys.exit(1)
 
-mySystem = System(SystemKey, SystemSecret)
+systemSecret = os.environ.get("SystemSecret", None)
+if systemSecret == None:
+    print("Please add System Secret")
+    sys.exit(1)
 
-# geeting the password from environment
-password = "MyBlabePass"# os.environ["clearblabe_password"]
+mySystem = System(systemKey, systemSecret)
+
+
+## Change: geeting the password from environment
+password =  os.environ.get("clearblabe_password", None)
+if password == None:
+    print("Please add PASSWORD")
+    sys.exit(1)
 print(password)
 
 # Log in as Preet
@@ -34,8 +68,14 @@ mqtt = mySystem.Messaging(preet)
 mqtt.connect()
 
 # coverting the data to string format
+## change: no need to convert data to string 
 str_data = str(data)
 
 # sending the data
-mqtt.publish("preetlaptop", str_data )
+mqtt.publish("preetlaptop", str_data)
 
+## Change: logging out the user
+preet.logout()
+
+## Change: disconnecting the messaging service
+mqtt.disconnect()
